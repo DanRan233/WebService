@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jaxws="http://cxf.apache.org/jaxws"
+       xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+http://cxf.apache.org/jaxws
+http://cxf.apache.org/schemas/jaxws.xsd
+http://cxf.apache.org/jaxrs
+http://cxf.apache.org/schemas/jaxrs.xsd">
+    <!--
+        xmlns:jaxws="http://cxf.apache.org/jaxws"
+        http://cxf.apache.org/jaxws
+        http://cxf.apache.org/schemas/jaxws.xsd
+        是对soap声明接口标签的引入
+        xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+        http://cxf.apache.org/jaxrs
+        http://cxf.apache.org/schemas/jaxrs.xsd
+        是对RestFul声明接口标签的引入
+    -->
+    <!-- spring发布webService服务配置-->
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+
+    <!-- 指向Soap接口发布类 -->
+    <bean id="SoapDemo" class="com.wzk.webservice.soap.impl.SoapDemoImpl"/>
+    <!-- 指向RestFul接口发布类-->
+    <bean id="RestFulDemo" class="com.wzk.webservice.restful.impl.RestFulDemoImpl"/>
+    <bean id="RestFulDemoTwo" class="com.wzk.webservice.restful.impl.RestFulDemoTwoImpl"/>
+
+    <!-- 配置CXF发布RestFul接口的JSON转换格式 -->
+    <bean id="JsonProvider" class="org.apache.cxf.jaxrs.provider.json.JSONProvider">
+        <!--
+            dropRootElement默认为false,
+            为falses时json格式会将类名作为第一个根节点
+            如：{Customer:{"id":123,"name":"John"}}
+            如果为true格式为：{"id":123,"name":"John"} Java类库GSON会解析成后者
+            -->
+        <property name="dropRootElement" value="true"/>
+
+        <!--
+            dropCollectionWrapperElement默认为false,
+            为false遇到Collection（List,Set,Quene集合的父接口，Java集合类的两个根接口之一   Collection、Map）时
+            json会将集合中的类名作为根节点，即List<user>转为json: {"user": { {"id":123,"name":"John"},{"id":111,"name":"lin"} } }
+            为true时转为json格式为{ {"id":123,"name":"John"},{"id":111,"name":"lin"} }
+            -->
+        <property name="dropCollectionWrapperElement" value="false"/>
+
+        <!--
+            serializeAsArray默认为false,
+            为false遇到Collection时将集合转为json格式为：{ {"id":123,"name":"John"},{"id":111,"name":"lin"} }
+            为true时将集合转为json格式为：[ {"id":123,"name":"John"},{"id":111,"name":"lin"} } ]
+            -->
+        <property name="serializeAsArray" value="true"/>
+
+        <!--
+            arrayKeys 即 ： org.apache.cxf.jaxrs.provider.json.JSONProvider<T> 类下的
+            public void setArrayKeys(java.util.List<String> keys) 方法，
+            方法内容是将传入参数设置为该类私有属性List<String> arrayKeys的值
+            其作用是设置顶级数组序列化，
+            即：[{“ someobject”：{“ a”：“ value”}}]
+            参考问题中指出如果对象也是数组则会丢失顶级【】
+            即 {“ someobject”：[{“ a”：“ value”}]}
+            如果固定它会导致丢失尾部 }
+            [{“ someobject”：[{“ a”：“ value”}]]
+            参考问题：https://issues.apache.org/jira/browse/CXF-5301
+            问题提出时间为2013-09-26 该问题已在2014-01-17的版本中解决
+
+
+
+            该标签的作用为指定json序列化时哪怕对象只有一个也将对其顶级数组序列化，
+            即防止多个对象转为json为：
+                [ {"id":123,"name":"John"},{"id":111,"name":"lin"} } ]
+             而单个对象转换为json为：
+               {{"id":123,"name":"John"}}
+               其value值是指定的对象转为json的 key
+               value标签可以设置多个
+            -->
+        <property name="arrayKeys">
+            <list>
+                <value>appointmentSlipInfo</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 设置指向Soap接口类的访问路径 -->
+    <jaxws:endpoint id="SoapDemoService" implementor="#SoapDemo" address="/SoapDemo/soap"/>
+
+    <!-- 设置指向RestFul接口类的访问路径及json序列化格式 -->
+    <jaxrs:server id="RestFulDemoService" address="/RestFulDemo/rest">
+        <!-- 指向接口类的bean -->
+        <jaxrs:serviceBeans>
+            <ref bean="RestFulDemo"/>
+        </jaxrs:serviceBeans>
+        <!-- 设置json格式的bean -->
+        <jaxrs:providers>
+            <ref bean="JsonProvider"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+    <jaxrs:server id="RestFulDemoTwoService" address="/RestFulDemoTwo/rest">
+        <!-- 指向接口类的bean -->
+        <jaxrs:serviceBeans>
+            <ref bean="RestFulDemoTwo"/>
+        </jaxrs:serviceBeans>
+        <!-- 设置json格式的bean -->
+        <jaxrs:providers>
+            <ref bean="JsonProvider"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+
+</beans>
