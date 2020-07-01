@@ -34,7 +34,7 @@
         <fastJson.version>1.2.62</fastJson.version>
 
         <!-- log4j核心依赖，2.12.1，更新于2019-08-09 -->
-        <log4j-core.version>2.12.1</log4j-core.version>
+        <log4j-core.version>2.13.2</log4j-core.version>
 
         <!-- CXF依赖，3.3.4，更新于2019-10-21 -->
         <cxf.version>3.2.4</cxf.version>
